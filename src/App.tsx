@@ -24,17 +24,32 @@ import SplashScreen from './components/SplashScreen';
 import SyncIndicator from './components/SyncIndicator';
 
 function App() {
-  const { currentUser } = useStore();
+  const { currentUser, setUser, setTenant, setOutlet } = useStore();
   const { isOnline } = useApp();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const init = async () => {
       await seedDemoData();
+
+      const savedUserId = localStorage.getItem('dukaguard-user');
+      const demoUser = await db.users.where('pin').equals('1234').first();
+      const user = (savedUserId ? await db.users.get(savedUserId) : null) || demoUser || null;
+
+      if (user) {
+        const tenant = await db.tenants.get(user.tenantId);
+        const outlet = await db.outlets.get(user.outletIds[0]);
+        setUser(user);
+        setTenant(tenant || null);
+        setOutlet(outlet || null);
+        localStorage.setItem('dukaguard-user', user.id);
+      }
+
       setLoading(false);
     };
+
     init();
-  }, []);
+  }, [setOutlet, setTenant, setUser]);
 
   if (loading) {
     return <SplashScreen />;
