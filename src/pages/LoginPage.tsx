@@ -28,6 +28,17 @@ export default function LoginPage() {
     }
   };
 
+  const handleKeyPress = (key: string) => {
+    setError('');
+
+    if (key === '⌫') {
+      setPin(p => p.slice(0, -1));
+      return;
+    }
+
+    setPin(p => (p.length < 4 ? `${p}${key}` : p));
+  };
+
   const keys = ['1','2','3','4','5','6','7','8','9','','0','⌫'];
 
   return (
@@ -57,24 +68,21 @@ export default function LoginPage() {
           ) : (
             <button
               key={key}
-              onClick={() => {
-                if (key === '⌫') setPin(p => p.slice(0, -1));
-                else {
-                  const nextPin = `${pin}${key}`;
-                  if (nextPin.length <= 4) {
-                    setPin(nextPin);
-                    if (nextPin.length === 4) {
-                      void handleLogin(nextPin);
-                    }
-                  }
-                }
-              }}
+              onClick={() => handleKeyPress(key)}
               className="aspect-square rounded-2xl bg-slate-800 text-xl font-bold text-white transition-all active:scale-95 active:bg-slate-700"
             >
               {key}
             </button>
           ))}
         </div>
+
+        <button
+          onClick={() => void handleLogin(pin)}
+          disabled={pin.length !== 4}
+          className="mt-4 w-full rounded-2xl bg-white px-4 py-3 text-sm font-bold text-slate-900 transition-all active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-300"
+        >
+          OK
+        </button>
 
         <p className="mt-6 text-center text-xs text-slate-500">
           Demo PINs: 1234 (Owner), 5678 (Manager), 9012 (Attendant)
