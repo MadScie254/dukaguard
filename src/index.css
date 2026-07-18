@@ -1,0 +1,271 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    overscroll-behavior: none;
+  }
+
+  input, button, select, textarea {
+    @apply text-base;
+    touch-action: manipulation;
+  }
+
+  /* Large tap targets for mobile */
+  button, a, input[type="button"], input[type="submit"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 font-semibold transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-primary {
+    @apply btn bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20;
+  }
+
+  .btn-secondary {
+    @apply btn bg-white text-slate-900 border-2 border-slate-200 hover:bg-slate-50;
+  }
+
+  .btn-danger {
+    @apply btn bg-danger-600 text-white hover:bg-danger-700;
+  }
+
+  .btn-success {
+    @apply btn bg-success-600 text-white hover:bg-success-700;
+  }
+
+  .btn-ghost {
+    @apply btn text-slate-600 hover:bg-slate-100;
+  }
+
+  .btn-lg {
+    @apply px-6 py-4 text-lg;
+  }
+
+  .input {
+    @apply w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition-all duration-200 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10;
+  }
+
+  .input-error {
+    @apply border-danger-300 focus:border-danger-500 focus:ring-danger-500/20;
+  }
+
+  .card {
+    @apply rounded-2xl bg-white p-4 shadow-sm border border-slate-100;
+  }
+
+  .card-hover {
+    @apply card transition-all duration-200 hover:shadow-md hover:border-slate-200;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply badge bg-success-100 text-success-800;
+  }
+
+  .badge-danger {
+    @apply badge bg-danger-100 text-danger-800;
+  }
+
+  .badge-warning {
+    @apply badge bg-warning-100 text-warning-800;
+  }
+
+  .badge-info {
+    @apply badge bg-dukaguard-100 text-dukaguard-800;
+  }
+
+  .stat-card {
+    @apply card flex flex-col gap-1;
+  }
+
+  .stat-label {
+    @apply text-xs font-medium text-slate-500 uppercase tracking-wider;
+  }
+
+  .stat-value {
+    @apply text-2xl font-bold text-slate-900;
+  }
+
+  .page-container {
+    @apply min-h-screen pb-24 px-4 pt-4;
+  }
+
+  .page-header {
+    @apply mb-4 flex items-center justify-between;
+  }
+
+  .page-title {
+    @apply text-xl font-bold text-slate-900;
+  }
+
+  .section-title {
+    @apply text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3;
+  }
+
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur-sm;
+  }
+
+  .bottom-nav-item {
+    @apply flex flex-col items-center gap-0.5 py-2 px-3 text-xs font-medium text-slate-400 transition-colors;
+  }
+
+  .bottom-nav-item.active {
+    @apply text-slate-900;
+  }
+
+  .numeric-keypad {
+    @apply grid grid-cols-3 gap-2;
+  }
+
+  .keypad-btn {
+    @apply aspect-square rounded-2xl bg-slate-100 text-2xl font-bold text-slate-900 transition-all active:scale-95 active:bg-slate-200 flex items-center justify-center;
+  }
+
+  .keypad-btn.action {
+    @apply bg-slate-900 text-white active:bg-slate-800;
+  }
+
+  .keypad-btn.danger {
+    @apply bg-danger-100 text-danger-700 active:bg-danger-200;
+  }
+
+  .product-grid {
+    @apply grid grid-cols-2 gap-3 sm:grid-cols-3;
+  }
+
+  .product-card {
+    @apply card-hover cursor-pointer flex flex-col items-center gap-2 p-3 text-center;
+  }
+
+  .product-card.selected {
+    @apply ring-2 ring-slate-900 bg-slate-50;
+  }
+
+  .modal-overlay {
+    @apply fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4;
+  }
+
+  .modal-content {
+    @apply w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl animate-slide-up;
+  }
+
+  .sync-indicator {
+    @apply fixed top-0 left-0 right-0 z-50 flex items-center justify-center gap-2 py-2 text-xs font-medium transition-all;
+  }
+
+  .sync-indicator.syncing {
+    @apply bg-dukaguard-500 text-white;
+  }
+
+  .sync-indicator.success {
+    @apply bg-success-500 text-white;
+  }
+
+  .sync-indicator.error {
+    @apply bg-danger-500 text-white;
+  }
+
+  .sync-indicator.offline {
+    @apply bg-warning-500 text-white;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Animations */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom scrollbar for desktop */
+@media (min-width: 640px) {
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+}
