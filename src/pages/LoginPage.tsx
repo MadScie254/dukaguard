@@ -12,8 +12,8 @@ export default function LoginPage() {
   const { setUser, setTenant, setOutlet } = useStore();
   const { translate } = useApp();
 
-  const handleLogin = async () => {
-    const user = await db.users.where('pin').equals(pin).first();
+  const handleLogin = async (enteredPin = pin) => {
+    const user = await db.users.where('pin').equals(enteredPin).first();
     if (user) {
       const tenant = await db.tenants.get(user.tenantId);
       const outlet = await db.outlets.get(user.outletIds[0]);
@@ -59,9 +59,14 @@ export default function LoginPage() {
               key={key}
               onClick={() => {
                 if (key === '⌫') setPin(p => p.slice(0, -1));
-                else if (pin.length < 4) setPin(p => p + key);
-                if (pin.length === 3 && key !== '⌫') {
-                  setTimeout(() => handleLogin(), 100);
+                else {
+                  const nextPin = `${pin}${key}`;
+                  if (nextPin.length <= 4) {
+                    setPin(nextPin);
+                    if (nextPin.length === 4) {
+                      void handleLogin(nextPin);
+                    }
+                  }
                 }
               }}
               className="aspect-square rounded-2xl bg-slate-800 text-xl font-bold text-white transition-all active:scale-95 active:bg-slate-700"
