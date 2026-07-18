@@ -7,36 +7,139 @@ import { useApp } from '../contexts/AppContext';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { generateId, getCurrentTimestamp } from '../lib/utils';
 
+function normalizeHeader(value: string): string {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+function parseCsvLine(line: string): string[] {
+  const values: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    const nextChar = line[index + 1];
+
+    if (char === '"' && inQuotes && nextChar === '"') {
+      current += '"';
+      index += 1;
+      continue;
+    }
+
+    if (char === '"') {
+      inQuotes = !inQuotes;
+      continue;
+    }
+
+    if (char === ',' && !inQuotes) {
+      values.push(current.trim());
+      current = '';
+      continue;
+    }
+
+    current += char;
+  }
+
+  values.push(current.trim());
+  return values;
+}
+
+function parseAmount(raw: string | undefined): number {
+  if (!raw) return 0;
+  const normalized = raw.replace(/[^0-9.-]+/g, '');
+  const amount = Number.parseFloat(normalized);
+  return Number.isFinite(amount) ? amount : 0;
+}
+
+function parseTimestamp(rawDate: string | undefined, rawTime: string | undefined): string {
+  const datePart = rawDate?.trim();
+  const timePart = rawTime?.trim();
+  if (!datePart && !timePart) return getCurrentTimestamp();
+
+  const merged = [datePart, timePart].filter(Boolean).join(' ');
+  const parsed = new Date(merged);
+  return Number.isNaN(parsed.getTime()) ? getCurrentTimestamp() : parsed.toISOString();
+}
+
+function parseMpesaCsv(text: string) {
+  const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  if (lines.length < 2) {
+    throw new Error('CSV file is empty or missing rows');
+  }
+
+  const headers = parseCsvLine(lines[0]).map(normalizeHeader);
+  const getFieldIndex = (...candidates: string[]) => headers.findIndex(header => candidates.includes(header));
+
+  const transactionIndex = getFieldIndex('transactionid', 'transactionreference', 'reference', 'receiptno', 'receiptnumber', 'id');
+  const phoneIndex = getFieldIndex('phonenumber', 'phone', 'senderphone', 'customerphone');
+  const amountIndex = getFieldIndex('amount', 'value', 'transactionamount');
+  const typeIndex = getFieldIndex('type', 'direction');
+  const descriptionIndex = getFieldIndex('description', 'details', 'narration', 'remarks');
+  const dateIndex = getFieldIndex('date', 'transactiondate', 'posteddate');
+  const timeIndex = getFieldIndex('time', 'transactiontime', 'postedtime');
+
+  return lines.slice(1).map(line => {
+    const columns = parseCsvLine(line);
+    const transactionId = columns[transactionIndex] || generateId();
+    const amount = parseAmount(columns[amountIndex]);
+    const typeValue = (columns[typeIndex] || 'incoming').toLowerCase();
+    const description = columns[descriptionIndex] || 'M-Pesa statement import';
+
+    return {
+      transactionId,
+      phoneNumber: columns[phoneIndex] || '',
+      amount,
+      type: typeValue.includes('out') ? 'outgoing' : 'incoming',
+      timestamp: parseTimestamp(columns[dateIndex], columns[timeIndex]),
+      description,
+    };
+  });
+}
+
 export default function MpesaImportPage() {
   const navigate = useNavigate();
   const { translate } = useApp();
   const { currentOutlet } = useStore();
-  const [imported, setImported] = useState(false);
+  const [status, setStatus] = useState<string>('');
+  const [error, setError] = useState('');
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !currentOutlet) return;
-
-    const mockEntries = [
-      { id: 'TXN001', amount: 1500, phone: '254712345678', type: 'incoming' as const, description: 'Sale payment' },
-      { id: 'TXN002', amount: 2200, phone: '254723456789', type: 'incoming' as const, description: 'Sale payment' },
-      { id: 'TXN003', amount: 800, phone: '254734567890', type: 'incoming' as const, description: 'Sale payment' },
-    ];
-
-    for (const entry of mockEntries) {
-      await db.mpesaEntries.add({
-        id: generateId(),
-        outletId: currentOutlet.id,
-        transactionId: entry.id,
-        phoneNumber: entry.phone,
-        amount: entry.amount,
-        type: entry.type,
-        timestamp: getCurrentTimestamp(),
-        description: entry.description,
-        synced: false,
-      });
+    if (!file || !currentOutlet) {
+      return;
     }
-    setImported(true);
+
+    setError('');
+    setStatus('');
+
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+      setError('PDF import is not supported yet. Please upload a CSV export for now.');
+      return;
+    }
+
+    try {
+      const csvText = await file.text();
+      const entries = parseMpesaCsv(csvText);
+
+      for (const entry of entries) {
+        await db.mpesaEntries.add({
+          id: generateId(),
+          outletId: currentOutlet.id,
+          transactionId: entry.transactionId,
+          phoneNumber: entry.phoneNumber,
+          amount: entry.amount,
+          type: entry.type,
+          timestamp: entry.timestamp,
+          description: entry.description,
+          synced: false,
+        });
+      }
+
+      setStatus(`Imported ${entries.length} statement entr${entries.length === 1 ? 'y' : 'ies'}.`);
+      e.target.value = '';
+    } catch (importError) {
+      setError(importError instanceof Error ? importError.message : 'Failed to import the CSV file.');
+    }
   };
 
   const entries = useLiveQuery(() => db.mpesaEntries.toArray(), []);
@@ -61,6 +164,8 @@ export default function MpesaImportPage() {
           <Upload className="h-4 w-4" /> Choose File
           <input type="file" accept=".csv,.pdf" className="hidden" onChange={handleFileUpload} />
         </label>
+        {status && <p className="mt-3 text-sm text-green-700">{status}</p>}
+        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
       </div>
 
       {entries && entries.length > 0 && (
